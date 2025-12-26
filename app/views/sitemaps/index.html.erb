@@ -1,0 +1,133 @@
+<% content_for :title, "Instant Website Sitemap" %>
+
+<style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #555;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .sitemap {
+      margin-top: 30px;
+    }
+    .sitemap h2 {
+      color: #333;
+      margin-bottom: 15px;
+    }
+    .sitemap-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .sitemap-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .sitemap-item:last-child {
+      border-bottom: none;
+    }
+    .sitemap-url {
+      color: #007bff;
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .sitemap-url:hover {
+      text-decoration: underline;
+    }
+    .sitemap-text {
+      color: #666;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    .count {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+  </style>
+
+<div class="container">
+    <h1>Instant Website Sitemap</h1>
+    <p>Enter a URL to generate a sitemap of all links on that page.</p>
+    
+    <%= form_with url: generate_path, method: :post, local: true, data: { turbo: false } do |form| %>
+      <div class="form-group">
+        <%= form.label :url, "Website URL:" %>
+        <%= form.text_field :url, placeholder: "https://example.com", value: params[:url] %>
+      </div>
+      <%= form.submit "Generate Sitemap", class: "btn" %>
+    <% end %>
+    
+    <% if @error %>
+      <div class="error">
+        <%= @error %>
+      </div>
+    <% end %>
+    
+    <% if @sitemap && @sitemap.any? %>
+      <div class="sitemap">
+        <h2>Sitemap Results</h2>
+        <div class="count">Found <%= @sitemap.count %> unique link<%= @sitemap.count == 1 ? '' : 's' %></div>
+        <ul class="sitemap-list">
+          <% @sitemap.each do |item| %>
+            <li class="sitemap-item">
+              <a href="<%= item[:url] %>" target="_blank" rel="noopener noreferrer" class="sitemap-url">
+                <%= item[:url] %>
+              </a>
+              <% if item[:text] && item[:text] != item[:url] %>
+                <div class="sitemap-text"><%= item[:text] %></div>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+
