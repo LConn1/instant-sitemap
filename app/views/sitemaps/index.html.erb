@@ -91,43 +91,43 @@
       font-size: 14px;
       margin-bottom: 15px;
     }
+    .loading {
+      margin-top: 20px;
+      text-align: center;
+      color: #666;
+      padding: 20px;
+    }
+    .loading::after {
+      content: "...";
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: "."; }
+      40% { content: ".."; }
+      60%, 100% { content: "..."; }
+    }
   </style>
 
 <div class="container">
     <h1>Instant Website Sitemap</h1>
     <p>Enter a URL to generate a sitemap of all links on that page.</p>
     
-    <%= form_with url: generate_path, method: :post, local: true, data: { turbo: false } do |form| %>
-      <div class="form-group">
-        <%= form.label :url, "Website URL:" %>
-        <%= form.text_field :url, placeholder: "https://example.com", value: params[:url] %>
+    <div data-controller="sitemap">
+      <%= form_with url: generate_path, method: :post, local: false, data: { sitemap_target: "form", action: "submit->sitemap#submit" } do |form| %>
+        <div class="form-group">
+          <%= form.label :url, "Website URL:" %>
+          <%= form.text_field :url, placeholder: "https://example.com" %>
+        </div>
+        <%= form.submit "Generate Sitemap", class: "btn", data: { sitemap_target: "submitButton" } %>
+      <% end %>
+      
+      <div class="loading" data-sitemap-target="loading" style="display: none;">
+        <p>Fetching and parsing website</p>
       </div>
-      <%= form.submit "Generate Sitemap", class: "btn" %>
-    <% end %>
-    
-    <% if @error %>
-      <div class="error">
-        <%= @error %>
-      </div>
-    <% end %>
-    
-    <% if @sitemap && @sitemap.any? %>
-      <div class="sitemap">
-        <h2>Sitemap Results</h2>
-        <div class="count">Found <%= @sitemap.count %> unique link<%= @sitemap.count == 1 ? '' : 's' %></div>
-        <ul class="sitemap-list">
-          <% @sitemap.each do |item| %>
-            <li class="sitemap-item">
-              <a href="<%= item[:url] %>" target="_blank" rel="noopener noreferrer" class="sitemap-url">
-                <%= item[:url] %>
-              </a>
-              <% if item[:text] && item[:text] != item[:url] %>
-                <div class="sitemap-text"><%= item[:text] %></div>
-              <% end %>
-            </li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
+      
+      <div class="error" data-sitemap-target="error" style="display: none;"></div>
+      
+      <div class="sitemap" data-sitemap-target="results"></div>
+    </div>
   </div>
 

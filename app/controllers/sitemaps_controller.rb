@@ -7,9 +7,7 @@ class SitemapsController < ApplicationController
     url = params[:url]
     
     if url.blank?
-      @error = "Please provide a URL"
-      @sitemap = nil
-      render :index, status: :unprocessable_entity
+      render json: { sitemap: nil, error: "Please provide a URL" }, status: :unprocessable_entity
       return
     end
 
@@ -45,9 +43,7 @@ class SitemapsController < ApplicationController
       end
       
       if response.code != "200"
-        @error = "Failed to fetch URL: #{response.code} #{response.message}"
-        @sitemap = nil
-        render :index, status: :unprocessable_entity
+        render json: { sitemap: nil, error: "Failed to fetch URL: #{response.code} #{response.message}" }, status: :unprocessable_entity
         return
       end
       
@@ -80,17 +76,13 @@ class SitemapsController < ApplicationController
       @sitemap.uniq! { |item| item[:url] }
       @sitemap.sort_by! { |item| item[:url] }
       
-      # Render the index view with results
-      render :index
+      # Return JSON data (no page reload)
+      render json: { sitemap: @sitemap, error: nil }
       
     rescue URI::InvalidURIError
-      @error = "Invalid URL format"
-      @sitemap = nil
-      render :index, status: :unprocessable_entity
+      render json: { sitemap: nil, error: "Invalid URL format" }, status: :unprocessable_entity
     rescue => e
-      @error = "Error fetching URL: #{e.message}"
-      @sitemap = nil
-      render :index, status: :unprocessable_entity
+      render json: { sitemap: nil, error: "Error fetching URL: #{e.message}" }, status: :unprocessable_entity
     end
   end
 end
