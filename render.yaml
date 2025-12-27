@@ -1,0 +1,43 @@
+# Render Blueprint Configuration
+# This file tells Render how to build and run your Rails application
+# Deploy using: Render Dashboard → New → Blueprint → Connect this repo
+
+services:
+  - type: web # Type of service: 'web' for HTTP servers
+    name: instant-sitemap # Name of your service in Render dashboard
+    env: ruby # Environment: tells Render to use Ruby/Rails setup
+    region: oregon # AWS region (choose closest to you: oregon, frankfurt, singapore, etc.)
+    plan: free # Pricing plan: 'free' for free tier, 'starter' for paid
+
+    # Build commands run once when deploying/updating your app
+    # These prepare your app for production
+    buildCommand: |
+      bundle install                                    # Install all Ruby gems from Gemfile
+      bundle exec rails assets:precompile              # Compile CSS/JS assets for production
+      # Note: No database setup needed - this app is stateless (no data persistence)
+
+    # Start command runs your app server
+    # $PORT is automatically set by Render (usually 10000)
+    startCommand: bundle exec rails server -p $PORT -e production
+
+    # Environment variables available to your Rails app
+    envVars:
+      - key: RAILS_ENV
+        value: production # Run in production mode (optimized, no debug)
+
+      - key: RAILS_MASTER_KEY
+        sync:
+          false # Don't sync from file - you'll add this manually in Render dashboard
+          # Get value from: cat config/master.key
+
+      - key: RAILS_LOG_TO_STDOUT
+        value: true # Send logs to stdout so Render can display them
+
+      - key: RAILS_SERVE_STATIC_FILES
+        value:
+          true # Allow Rails to serve CSS/JS files (needed for free tier)
+          # On paid plans, you'd use a CDN instead
+
+    # Health check endpoint - Render pings this to know if your app is running
+    # Rails provides /up endpoint by default that returns 200 if app is healthy
+    healthCheckPath: /up
