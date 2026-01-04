@@ -85,5 +85,29 @@ class SitemapsController < ApplicationController
       render json: { sitemap: nil, error: "Error fetching URL: #{e.message}" }, status: :unprocessable_entity
     end
   end
+  
+  def check_links
+    urls = params[:urls]
+    
+    if urls.blank? || !urls.is_a?(Array)
+      render json: { error: "Please provide an array of URLs" }, status: :unprocessable_entity
+      return
+    end
+    
+    # Limit the number of URLs that can be checked at once
+    if urls.length > 100
+      render json: { error: "Maximum 100 URLs can be checked at once" }, status: :unprocessable_entity
+      return
+    end
+    
+    begin
+      checker = LinkChecker.new(urls)
+      results = checker.check
+      
+      render json: { results: results }
+    rescue => e
+      render json: { error: "Error checking links: #{e.message}" }, status: :unprocessable_entity
+    end
+  end
 end
 
