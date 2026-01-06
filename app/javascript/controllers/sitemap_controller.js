@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["form", "results", "error", "loading", "submitButton"]
+  static targets = ["form", "results", "error", "loading", "submitButton", "overlay", "panel", "panelTitle", "panelUrl", "panelContent"]
 
   STATUS_PRIORITY = {
     broken: 0,
@@ -13,6 +13,7 @@ export default class extends Controller {
   connect() {
     this.items = []
     this.activeFilter = "all"
+    this.currentSitemap = []
   }
 
   async submit(event) {
@@ -71,6 +72,9 @@ export default class extends Controller {
       index,
       statusCategory: "checking"
     }))
+    
+    // Store sitemap for page detail requests
+    this.currentSitemap = sitemap
 
     const count = sitemap.length
     const countText = count === 1 ? "link" : "links"
@@ -101,19 +105,18 @@ export default class extends Controller {
 
     sitemap.forEach((item, index) => {
       html += `
-        <li class="sitemap-item"
+        <li class="sitemap-item clickable-url"
             data-url-index="${index}"
-            data-status-category="checking">
+            data-status-category="checking"
+            data-action="click->sitemap#showPageDetails"
+            data-url="${this.escapeHtml(item.url)}">
           <span class="status-indicator status-checking" data-status-index="${index}">
             <span class="spinner"></span>
           </span>
           <div class="link-content">
-            <a href="${this.escapeHtml(item.url)}"
-               target="_blank"
-               rel="noopener noreferrer"
-               class="sitemap-url">
+            <div class="sitemap-url">
               ${this.escapeHtml(item.url)}
-            </a>
+            </div>
             ${
               item.text && item.text !== item.url
                 ? `<div class="sitemap-text">${this.escapeHtml(item.text)}</div>`
@@ -257,5 +260,202 @@ export default class extends Controller {
     const div = document.createElement("div")
     div.textContent = text
     return div.innerHTML
+  }
+  
+  // Page Detail Panel Methods
+  async showPageDetails(event) {
+    console.log('showPageDetails called', event.currentTarget)
+    const url = event.currentTarget.dataset.url
+    console.log('URL:', url)
+    if (!url) return
+    
+    this.openPanel()
+    this.panelUrlTarget.textContent = url
+    this.panelTitleTarget.textContent = "Page Details"
+    this.panelContentTarget.innerHTML = '<div class="panel-loading">Loading page details...</div>'
+    
+    try {
+      console.log('Making request to /page_details')
+      const response = await fetch("/page_details", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ 
+          url: url,
+          sitemap_urls: this.currentSitemap.map(item => item.url)
+        })
+      })
+      
+      console.log('Response:', response)
+      const data = await response.json()
+      console.log('Data:', data)
+      
+      if (data.error) {
+        this.panelContentTarget.innerHTML = `<div class="panel-error">${data.error}</div>`
+        return
+      }
+      
+      this.renderPageDetails(data.details)
+    } catch (error) {
+      console.error('Error:', error)
+      this.panelContentTarget.innerHTML = `<div class="panel-error">Failed to load page details: ${error.message}</div>`
+    }
+  }
+  
+  renderPageDetails(details) {
+    const statusBadge = this.getStatusBadge(details.status, details.redirect_info)
+    const indexabilityBadge = details.indexability === 'noindex' ? 
+      '<span class="status-badge noindex">No Index</span>' : 
+      '<span class="status-badge index">Index</span>'
+    
+    let html = `
+      <div class="detail-section">
+        <h3>Page Information</h3>
+        <div class="detail-item">
+          <span class="detail-label">Status:</span>
+          <span class="detail-value">${statusBadge}</span>
+        </div>
+        ${details.redirect_info ? `
+          <div class="detail-item">
+            <span class="detail-label">Redirects to:</span>
+            <span class="detail-value">${this.escapeHtml(details.redirect_info.to)}</span>
+          </div>
+        ` : ''}
+        <div class="detail-item">
+          <span class="detail-label">Title:</span>
+          <span class="detail-value">${details.title ? this.escapeHtml(details.title) : 'No title found'}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Meta Description:</span>
+          <span class="detail-value">${details.meta_description ? this.escapeHtml(details.meta_description) : 'No meta description'}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Word Count:</span>
+          <span class="detail-value">${details.word_count || 0}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Indexability:</span>
+          <span class="detail-value">${indexabilityBadge}</span>
+        </div>
+        ${details.canonical_url ? `
+          <div class="detail-item">
+            <span class="detail-label">Canonical URL:</span>
+            <span class="detail-value">${this.escapeHtml(details.canonical_url)}</span>
+          </div>
+        ` : ''}
+      </div>
+      
+      <div class="detail-section">
+        <h3>Inbound Links (${details.inbound_links.length})</h3>
+        ${this.renderLinkList(details.inbound_links, 'inbound')}
+      </div>
+      
+      <div class="detail-section">
+        <h3>Outbound Links (${details.outbound_links.length})</h3>
+        ${this.renderLinkList(details.outbound_links, 'outbound')}
+      </div>
+    `
+    
+    this.panelContentTarget.innerHTML = html
+  }
+  
+  renderLinkList(links, type) {
+    if (links.length === 0) {
+      return '<div class="empty-state">No links found</div>'
+    }
+    
+    let html = '<ul class="link-list">'
+    
+    links.forEach(link => {
+      const url = type === 'inbound' ? link.from_url : link.to_url
+      const title = type === 'inbound' ? link.from_title : link.to_title
+      const anchorText = link.anchor_text
+      
+      html += `
+        <li class="link-item">
+          <div class="link-url" data-action="click->sitemap#navigateToPage" data-url="${this.escapeHtml(url)}">
+            ${this.escapeHtml(url)}
+          </div>
+          ${title && title !== url ? `<div class="link-anchor">Title: ${this.escapeHtml(title)}</div>` : ''}
+          <div class="link-anchor">Anchor: "${this.escapeHtml(anchorText)}"</div>
+          ${type === 'outbound' && !link.in_sitemap ? '<div class="link-anchor" style="color: #999;">External link</div>' : ''}
+        </li>
+      `
+    })
+    
+    html += '</ul>'
+    return html
+  }
+  
+  getStatusBadge(status, redirectInfo) {
+    if (status === 200) {
+      return '<span class="status-badge ok">OK (200)</span>'
+    } else if (status >= 300 && status < 400) {
+      return `<span class="status-badge redirect">Redirect (${status})</span>`
+    } else {
+      return `<span class="status-badge broken">Error (${status})</span>`
+    }
+  }
+  
+  navigateToPage(event) {
+    const url = event.currentTarget.dataset.url
+    if (!url) return
+    
+    // Check if this URL is in our current sitemap
+    const sitemapItem = this.currentSitemap.find(item => item.url === url)
+    if (sitemapItem) {
+      // Navigate to this page's details within the same panel
+      this.showPageDetailsForUrl(url)
+    } else {
+      // External link - open in new tab
+      window.open(url, '_blank', 'noopener,noreferrer')
+    }
+  }
+  
+  async showPageDetailsForUrl(url) {
+    this.panelUrlTarget.textContent = url
+    this.panelContentTarget.innerHTML = '<div class="panel-loading">Loading page details...</div>'
+    
+    try {
+      const response = await fetch("/page_details", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ 
+          url: url,
+          sitemap_urls: this.currentSitemap.map(item => item.url)
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.error) {
+        this.panelContentTarget.innerHTML = `<div class="panel-error">${data.error}</div>`
+        return
+      }
+      
+      this.renderPageDetails(data.details)
+    } catch (error) {
+      this.panelContentTarget.innerHTML = `<div class="panel-error">Failed to load page details: ${error.message}</div>`
+    }
+  }
+  
+  openPanel() {
+    console.log('Opening panel')
+    console.log('Overlay target:', this.overlayTarget)
+    console.log('Panel target:', this.panelTarget)
+    this.overlayTarget.style.display = 'block'
+    this.panelTarget.classList.add('open')
+    document.body.classList.add('panel-open')
+  }
+  
+  closePanel() {
+    this.overlayTarget.style.display = 'none'
+    this.panelTarget.classList.remove('open')
+    document.body.classList.remove('panel-open')
   }
 }

@@ -109,5 +109,28 @@ class SitemapsController < ApplicationController
       render json: { error: "Error checking links: #{e.message}" }, status: :unprocessable_entity
     end
   end
+  
+  def page_details
+    url = params[:url]
+    sitemap_urls = params[:sitemap_urls] || []
+    
+    if url.blank?
+      render json: { error: "Please provide a URL" }, status: :unprocessable_entity
+      return
+    end
+    
+    begin
+      analyzer = PageAnalyzer.new(url, sitemap_urls)
+      details = analyzer.analyze
+      
+      if details[:error]
+        render json: { error: details[:error] }, status: :unprocessable_entity
+      else
+        render json: { details: details }
+      end
+    rescue => e
+      render json: { error: "Error analyzing page: #{e.message}" }, status: :unprocessable_entity
+    end
+  end
 end
 

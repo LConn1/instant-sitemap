@@ -13,4 +13,5 @@ Rails.application.routes.draw do
   root "sitemaps#index"
   post "/generate", to: "sitemaps#generate"
   post "/check_links", to: "sitemaps#check_links"
+  post "/page_details", to: "sitemaps#page_details"
 end

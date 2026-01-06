@@ -7,6 +7,11 @@
     margin: 0 auto;
     padding: 20px;
     background-color: #f5f5f5;
+    transition: margin-right 0.3s ease;
+  }
+  
+  body.panel-open {
+    margin-right: 500px;
   }
   .container {
     background: white;
@@ -141,6 +146,181 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .filters { margin-bottom: 15px; }
   .filter-dropdown { padding: 5px 10px; font-size: 14px; border-radius: 4px; border: 1px solid #ccc; }
+  
+  /* Page Detail Panel Styles */
+  .page-detail-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none;
+  }
+  
+  .page-detail-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 500px;
+    height: 100vh;
+    background: white;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    z-index: 1001;
+  }
+  
+  .page-detail-panel.open {
+    transform: translateX(0);
+  }
+  
+  .panel-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    background-color: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  .panel-title {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .panel-url {
+    font-size: 14px;
+    color: #666;
+    word-break: break-all;
+    margin-bottom: 10px;
+  }
+  
+  .panel-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 5px;
+  }
+  
+  .panel-close:hover {
+    color: #333;
+  }
+  
+  .panel-content {
+    padding: 20px;
+  }
+  
+  .detail-section {
+    margin-bottom: 25px;
+  }
+  
+  .detail-section h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+  }
+  
+  .detail-item {
+    margin-bottom: 10px;
+  }
+  
+  .detail-label {
+    font-weight: 500;
+    color: #555;
+    display: inline-block;
+    min-width: 120px;
+  }
+  
+  .detail-value {
+    color: #333;
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .status-badge.ok { background-color: #e8f5e9; color: #2e7d32; }
+  .status-badge.redirect { background-color: #fff3e0; color: #e65100; }
+  .status-badge.broken { background-color: #ffebee; color: #c62828; }
+  .status-badge.index { background-color: #e3f2fd; color: #1565c0; }
+  .status-badge.noindex { background-color: #fce4ec; color: #ad1457; }
+  
+  .link-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .link-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .link-item:last-child {
+    border-bottom: none;
+  }
+  
+  .link-url {
+    color: #007bff;
+    text-decoration: none;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  .link-url:hover {
+    text-decoration: underline;
+  }
+  
+  .link-anchor {
+    color: #666;
+    font-size: 12px;
+    margin-top: 3px;
+    font-style: italic;
+  }
+  
+  .empty-state {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  .clickable-url {
+    cursor: pointer;
+  }
+  
+  .clickable-url:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .panel-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+  }
+  
+  .panel-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 20px;
+  }
 </style>
 
 <div class="container">
@@ -163,5 +343,18 @@
     <div class="error" data-sitemap-target="error" style="display: none;"></div>
 
     <div class="sitemap" data-sitemap-target="results"></div>
+    
+    <!-- Page Detail Panel -->
+    <div class="page-detail-overlay" data-sitemap-target="overlay" data-action="click->sitemap#closePanel"></div>
+    <div class="page-detail-panel" data-sitemap-target="panel">
+      <div class="panel-header">
+        <button class="panel-close" data-action="click->sitemap#closePanel">&times;</button>
+        <h2 class="panel-title" data-sitemap-target="panelTitle">Page Details</h2>
+        <div class="panel-url" data-sitemap-target="panelUrl"></div>
+      </div>
+      <div class="panel-content" data-sitemap-target="panelContent">
+        <div class="panel-loading">Loading page details...</div>
+      </div>
+    </div>
   </div>
 </div>
