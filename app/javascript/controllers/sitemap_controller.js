@@ -333,16 +333,31 @@ export default class extends Controller {
             <span class="detail-value">${details.meta_description ? this.escapeHtml(details.meta_description) : 'No meta description'}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Word Count:</span>
+            <span class="detail-label-with-info">
+              <span>Word Count:</span>
+              <span class="info-icon">
+                <div class="tooltip">Total words in page content</div>
+              </span>
+            </span>
             <span class="detail-value">${details.word_count || 0}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Indexability:</span>
+            <span class="detail-label-with-info">
+              <span>Indexability:</span>
+              <span class="info-icon">
+                <div class="tooltip">Index = appears in Google search results. NoIndex = hidden from search engines</div>
+              </span>
+            </span>
             <span class="detail-value">${indexabilityBadge}</span>
           </div>
           ${details.canonical_url ? `
             <div class="detail-item">
-              <span class="detail-label">Canonical URL:</span>
+              <span class="detail-label-with-info">
+                <span>Canonical URL:</span>
+                <span class="info-icon">
+                  <div class="tooltip">The "official" version of this page that search engines should index</div>
+                </span>
+              </span>
               <span class="detail-value">${this.escapeHtml(details.canonical_url)}</span>
             </div>
           ` : ''}
@@ -350,14 +365,24 @@ export default class extends Controller {
       </div>
       
       <div class="detail-section">
-        <h3>Inbound Links (${details.inbound_links.length})</h3>
+        <div class="section-header">
+          <h3>Inbound Links (${details.inbound_links.length})</h3>
+          <span class="info-icon">
+            <div class="tooltip">Other pages in your sitemap that link to this page. Good for SEO and navigation</div>
+          </span>
+        </div>
         <div class="detail-section-content">
           ${this.renderLinkList(details.inbound_links, 'inbound')}
         </div>
       </div>
       
       <div class="detail-section">
-        <h3>Outbound Links (${details.outbound_links.length})</h3>
+        <div class="section-header">
+          <h3>Outbound Links (${details.outbound_links.length})</h3>
+          <span class="info-icon">
+            <div class="tooltip">Links from this page to other pages (internal or external)</div>
+          </span>
+        </div>
         <div class="detail-section-content">
           ${this.renderLinkList(details.outbound_links, 'outbound')}
         </div>
@@ -365,6 +390,73 @@ export default class extends Controller {
     `
     
     this.panelContentTarget.innerHTML = html
+    
+    // Fix tooltip positioning for section headers after DOM update
+    this.fixSectionTooltipPositioning()
+  }
+  
+  fixSectionTooltipPositioning() {
+    const sectionHeaders = this.panelContentTarget.querySelectorAll('.section-header .info-icon')
+    
+    sectionHeaders.forEach(icon => {
+      const tooltip = icon.querySelector('.tooltip')
+      if (!tooltip) return
+      
+      let isHovering = false
+      let repositionTimeout = null
+      
+      const showTooltip = () => {
+        isHovering = true
+        
+        // Small delay to allow CSS transition to start
+        repositionTimeout = setTimeout(() => {
+          if (!isHovering) return
+          
+          const iconRect = icon.getBoundingClientRect()
+          const panelRect = this.panelTarget.getBoundingClientRect()
+          
+          // Check if tooltip would be clipped by panel
+          const tooltipBottom = iconRect.top - 60 // estimated tooltip height + margin
+          
+          if (tooltipBottom < panelRect.top + 100) { // If too close to top of panel
+            // Use fixed positioning to escape panel
+            tooltip.classList.add('fixed-position')
+            tooltip.style.top = `${iconRect.top - 60}px`
+            tooltip.style.left = `${Math.max(10, iconRect.right - 200)}px`
+            
+            // Ensure it doesn't go off screen
+            if (iconRect.top - 60 < 10) {
+              tooltip.style.top = `${iconRect.bottom + 10}px`
+            }
+          } else {
+            // Use normal absolute positioning
+            tooltip.classList.remove('fixed-position')
+            tooltip.style.top = ''
+            tooltip.style.left = ''
+          }
+        }, 50)
+      }
+      
+      const hideTooltip = () => {
+        isHovering = false
+        if (repositionTimeout) {
+          clearTimeout(repositionTimeout)
+        }
+        
+        // Reset positioning
+        tooltip.classList.remove('fixed-position')
+        tooltip.style.top = ''
+        tooltip.style.left = ''
+      }
+      
+      // Remove any existing listeners
+      icon.removeEventListener('mouseenter', showTooltip)
+      icon.removeEventListener('mouseleave', hideTooltip)
+      
+      // Add new listeners
+      icon.addEventListener('mouseenter', showTooltip)
+      icon.addEventListener('mouseleave', hideTooltip)
+    })
   }
   
   renderLinkList(links, type) {
