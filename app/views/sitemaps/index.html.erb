@@ -404,21 +404,15 @@
   }
   
   .panel-loading {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
     padding: 60px 20px;
     color: #6b7280;
-  }
-  
-  .panel-loading::before {
-    content: '';
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 2px solid #e5e7eb;
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
+    font-size: 14px;
+    text-align: center;
   }
   
   .panel-error {

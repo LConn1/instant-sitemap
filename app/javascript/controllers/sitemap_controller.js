@@ -272,7 +272,12 @@ export default class extends Controller {
     this.openPanel()
     this.panelUrlTarget.textContent = url
     this.panelTitleTarget.textContent = "Page Details"
-    this.panelContentTarget.innerHTML = '<div class="panel-loading">Loading page details...</div>'
+    this.panelContentTarget.innerHTML = `
+      <div class="panel-loading">
+        <div class="spinner"></div>
+        <div>Loading page details...</div>
+      </div>
+    `
     
     try {
       console.log('Making request to /page_details')
@@ -514,7 +519,12 @@ export default class extends Controller {
   
   async showPageDetailsForUrl(url) {
     this.panelUrlTarget.textContent = url
-    this.panelContentTarget.innerHTML = '<div class="panel-loading">Loading page details...</div>'
+    this.panelContentTarget.innerHTML = `
+      <div class="panel-loading">
+        <div class="spinner"></div>
+        <div>Loading page details...</div>
+      </div>
+    `
     
     try {
       const response = await fetch("/page_details", {
