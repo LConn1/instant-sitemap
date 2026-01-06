@@ -313,48 +313,54 @@ export default class extends Controller {
     let html = `
       <div class="detail-section">
         <h3>Page Information</h3>
-        <div class="detail-item">
-          <span class="detail-label">Status:</span>
-          <span class="detail-value">${statusBadge}</span>
-        </div>
-        ${details.redirect_info ? `
+        <div class="detail-section-content">
           <div class="detail-item">
-            <span class="detail-label">Redirects to:</span>
-            <span class="detail-value">${this.escapeHtml(details.redirect_info.to)}</span>
+            <span class="detail-label">Status:</span>
+            <span class="detail-value">${statusBadge}</span>
           </div>
-        ` : ''}
-        <div class="detail-item">
-          <span class="detail-label">Title:</span>
-          <span class="detail-value">${details.title ? this.escapeHtml(details.title) : 'No title found'}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Meta Description:</span>
-          <span class="detail-value">${details.meta_description ? this.escapeHtml(details.meta_description) : 'No meta description'}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Word Count:</span>
-          <span class="detail-value">${details.word_count || 0}</span>
-        </div>
-        <div class="detail-item">
-          <span class="detail-label">Indexability:</span>
-          <span class="detail-value">${indexabilityBadge}</span>
-        </div>
-        ${details.canonical_url ? `
+          ${details.redirect_info ? `
+            <div class="detail-item">
+              <span class="detail-label">Redirects to:</span>
+              <span class="detail-value">${this.escapeHtml(details.redirect_info.to)}</span>
+            </div>
+          ` : ''}
           <div class="detail-item">
-            <span class="detail-label">Canonical URL:</span>
-            <span class="detail-value">${this.escapeHtml(details.canonical_url)}</span>
+            <span class="detail-label">Title:</span>
+            <span class="detail-value">${details.title ? this.escapeHtml(details.title) : 'No title found'}</span>
           </div>
-        ` : ''}
+          <div class="detail-item">
+            <span class="detail-label">Meta Description:</span>
+            <span class="detail-value">${details.meta_description ? this.escapeHtml(details.meta_description) : 'No meta description'}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Word Count:</span>
+            <span class="detail-value">${details.word_count || 0}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Indexability:</span>
+            <span class="detail-value">${indexabilityBadge}</span>
+          </div>
+          ${details.canonical_url ? `
+            <div class="detail-item">
+              <span class="detail-label">Canonical URL:</span>
+              <span class="detail-value">${this.escapeHtml(details.canonical_url)}</span>
+            </div>
+          ` : ''}
+        </div>
       </div>
       
       <div class="detail-section">
         <h3>Inbound Links (${details.inbound_links.length})</h3>
-        ${this.renderLinkList(details.inbound_links, 'inbound')}
+        <div class="detail-section-content">
+          ${this.renderLinkList(details.inbound_links, 'inbound')}
+        </div>
       </div>
       
       <div class="detail-section">
         <h3>Outbound Links (${details.outbound_links.length})</h3>
-        ${this.renderLinkList(details.outbound_links, 'outbound')}
+        <div class="detail-section-content">
+          ${this.renderLinkList(details.outbound_links, 'outbound')}
+        </div>
       </div>
     `
     
@@ -448,14 +454,24 @@ export default class extends Controller {
     console.log('Opening panel')
     console.log('Overlay target:', this.overlayTarget)
     console.log('Panel target:', this.panelTarget)
+    
     this.overlayTarget.style.display = 'block'
+    
+    // Force reflow to ensure display change takes effect
+    this.overlayTarget.offsetHeight
+    
+    // Add classes for smooth animation
+    this.overlayTarget.classList.add('show')
     this.panelTarget.classList.add('open')
-    document.body.classList.add('panel-open')
   }
   
   closePanel() {
-    this.overlayTarget.style.display = 'none'
+    this.overlayTarget.classList.remove('show')
     this.panelTarget.classList.remove('open')
-    document.body.classList.remove('panel-open')
+    
+    // Hide overlay after animation completes
+    setTimeout(() => {
+      this.overlayTarget.style.display = 'none'
+    }, 300)
   }
 }
