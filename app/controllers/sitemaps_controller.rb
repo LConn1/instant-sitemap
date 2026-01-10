@@ -4,7 +4,7 @@ class SitemapsController < ApplicationController
   end
 
   def generate
-    url = params[:url]
+    url = params[:url].to_s.strip
     
     if url.blank?
       render json: { sitemap: nil, error: "Please provide a URL" }, status: :unprocessable_entity
@@ -111,7 +111,7 @@ class SitemapsController < ApplicationController
   end
   
   def page_details
-    url = params[:url]
+    url = params[:url].to_s.strip
     sitemap_urls = params[:sitemap_urls] || []
     
     if url.blank?
