@@ -10,6 +10,18 @@ A simple Rails web application that generates a sitemap (list of all links) from
 - Displays a clean, sorted list of unique links
 - Handles redirects and HTTPS automatically
 - Filters out non-HTTP links (javascript:, mailto:, tel:, etc.)
+- Download a CSV report of all discovered links, including anchor text, check status, HTTP status, redirect destination, and errors
+- Export while checks are running; links without results are marked `Unchecked`
+
+## CSV Reports
+
+After generating a sitemap, click **Download CSV report**. The report includes all discovered links, regardless of the selected status filter. Download again after checks finish to include updated results. The CSV is generated locally in your browser. Cells that could be interpreted as spreadsheet formulas are prefixed with an apostrophe for safety.
+
+Run the report tests with Node.js 22:
+
+```bash
+node --test test/javascript/*_test.mjs
+```
 
 ## Requirements
 
