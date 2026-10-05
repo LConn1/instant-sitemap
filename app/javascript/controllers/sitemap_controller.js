@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { buildLinkReport } from "link_report"
 
 export default class extends Controller {
   static targets = ["form", "results", "error", "loading", "submitButton", "overlay", "panel", "panelTitle", "panelUrl", "panelContent"]
@@ -21,6 +22,8 @@ export default class extends Controller {
 
     this.loadingTarget.style.display = "block"
     this.resultsTarget.innerHTML = ""
+    this.items = []
+    this.currentSitemap = []
     this.errorTarget.style.display = "none"
     this.submitButtonTarget.disabled = true
     this.submitButtonTarget.textContent = "Generating..."
@@ -82,6 +85,8 @@ export default class extends Controller {
     let html = `
       <h2>Sitemap Results</h2>
       <div class="count">Found ${count} unique ${countText}</div>
+      <button type="button" data-action="click->sitemap#downloadReport">Download CSV report</button>
+      <p class="count">Exports all links, regardless of the filter. Pending checks are marked Unchecked.</p>
 
       <div class="filters">
         <label for="status-filter">Filter links by:</label>
@@ -134,6 +139,20 @@ export default class extends Controller {
     this.bindDropdown()
   }
 
+  downloadReport() {
+    if (this.items.length === 0) return
+
+    const blob = new Blob([buildLinkReport(this.items)], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "sitemap-link-report.csv"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
   bindDropdown() {
     const dropdown = this.resultsTarget.querySelector("#status-filter")
     if (!dropdown) return
@@ -180,6 +199,7 @@ export default class extends Controller {
     const timeout = 12000
 
     for (let i = 0; i < urls.length; i += concurrency) {
+      if (this.currentSitemap !== sitemap) return
       const batch = urls.slice(i, i + concurrency)
       const batchIndices = batch.map((_, idx) => i + idx)
 
@@ -201,10 +221,14 @@ export default class extends Controller {
 
         const data = await response.json()
 
+        if (this.currentSitemap !== sitemap) return
+
         data.results?.forEach((result, batchIndex) => {
           this.updateLinkStatus(batchIndices[batchIndex], result)
         })
       } catch (error) {
+        if (this.currentSitemap !== sitemap) return
+
         batchIndices.forEach(index => {
           this.updateLinkStatus(index, {
             status: 0,
@@ -220,6 +244,8 @@ export default class extends Controller {
   }
 
   updateLinkStatus(index, result) {
+    if (!this.items[index]) return
+    this.items[index].checkResult = { ...result }
     const indicator = document.querySelector(`[data-status-index="${index}"]`)
     const info = document.querySelector(`[data-info-index="${index}"]`)
     const item = document.querySelector(`[data-url-index="${index}"]`)
