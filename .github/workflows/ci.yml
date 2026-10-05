@@ -6,6 +6,16 @@ on:
     branches: [ main ]
 
 jobs:
+  test_js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test sitemap browser controller
+        run: node --test test/javascript/sitemap_controller_test.mjs
+
   scan_ruby:
     runs-on: ubuntu-latest
 
