@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["form", "results", "error", "loading", "submitButton", "overlay", "panel", "panelTitle", "panelUrl", "panelContent"]
+  static targets = ["form", "results", "error", "loading", "submitButton", "overlay", "panel", "panelTitle", "panelUrl", "panelContent", "matchCount", "noMatches"]
 
   STATUS_PRIORITY = {
     broken: 0,
@@ -14,10 +14,12 @@ export default class extends Controller {
     this.items = []
     this.activeFilter = "all"
     this.currentSitemap = []
+    this.searchQuery = ""
   }
 
   async submit(event) {
     event.preventDefault()
+    this.searchQuery = ""
 
     this.loadingTarget.style.display = "block"
     this.resultsTarget.innerHTML = ""
@@ -81,7 +83,14 @@ export default class extends Controller {
 
     let html = `
       <h2>Sitemap Results</h2>
-      <div class="count">Found ${count} unique ${countText}</div>
+      <div class="count" data-sitemap-target="matchCount" role="status">Showing ${count} of ${count} ${countText}</div>
+
+      <div class="form-group">
+        <label for="link-search">Search links:</label>
+        <input id="link-search" type="text" autocomplete="off"
+               placeholder="Search URL or anchor text"
+               data-action="input->sitemap#search">
+      </div>
 
       <div class="filters">
         <label for="status-filter">Filter links by:</label>
@@ -99,6 +108,8 @@ export default class extends Controller {
         <span class="legend-item"><span class="status-dot status-redirect"></span> Redirect</span>
         <span class="legend-item"><span class="status-dot status-error"></span> Broken</span>
       </div>
+
+      <div class="empty-state" data-sitemap-target="noMatches" role="status" style="display: none;">No links match your search and status filter.</div>
 
       <ul class="sitemap-list">
     `
@@ -143,18 +154,34 @@ export default class extends Controller {
     })
   }
 
+  search(event) {
+    this.searchQuery = event.currentTarget.value
+    this.applyFilter()
+  }
+
   applyFilter() {
     const items = Array.from(
       this.resultsTarget.querySelectorAll(".sitemap-item")
     )
 
+    const query = this.searchQuery.toLowerCase()
+    let matchCount = 0
+
     items.forEach(el => {
+      const data = this.items[Number(el.dataset.urlIndex)]
+      const searchMatches = !query ||
+        data.url.toLowerCase().includes(query) ||
+        (data.text || "").toLowerCase().includes(query)
       const status = el.dataset.statusCategory
       const visible =
-        this.activeFilter === "all" || status === this.activeFilter
+        searchMatches && (this.activeFilter === "all" || status === this.activeFilter)
 
       el.style.display = visible ? "flex" : "none"
+      if (visible) matchCount += 1
     })
+
+    this.matchCountTarget.textContent = `Showing ${matchCount} of ${this.items.length} ${this.items.length === 1 ? "link" : "links"}`
+    this.noMatchesTarget.style.display = matchCount === 0 ? "block" : "none"
 
     if (this.activeFilter === "all") {
       this.sortByStatusPriority(items)

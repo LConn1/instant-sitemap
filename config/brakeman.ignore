@@ -1,0 +1,25 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "File Access",
+      "fingerprint": "5831905f88b83bf3bbedf054876bb905d91e6d9220fde79f884dab0e2ae86aa3",
+      "check_name": "FileAccess",
+      "message": "Parameter value used in file name",
+      "file": "app/controllers/sitemaps_controller.rb",
+      "line": 38,
+      "confidence": "Weak",
+      "notes": "False positive for local file access: this Net::HTTP constructor receives a parsed URL hostname and port for the intentional remote sitemap fetch (or its redirect), not a filesystem path. No File/IO open occurs here. This does not establish SSRF protection; outbound destination validation is a separate known gap."
+    },
+    {
+      "warning_type": "File Access",
+      "fingerprint": "a7b56231b927283e35b34426d482f617e0da3d02bcb10051850366f53d230f9f",
+      "check_name": "FileAccess",
+      "message": "Parameter value used in file name",
+      "file": "app/controllers/sitemaps_controller.rb",
+      "line": 24,
+      "confidence": "Weak",
+      "notes": "False positive for local file access: this Net::HTTP constructor receives a parsed URL hostname and port for the intentional remote sitemap fetch (or its redirect), not a filesystem path. No File/IO open occurs here. This does not establish SSRF protection; outbound destination validation is a separate known gap."
+    }
+  ],
+  "brakeman_version": "8.1.0"
+}
