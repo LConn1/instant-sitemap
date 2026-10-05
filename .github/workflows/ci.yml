@@ -6,6 +6,18 @@ on:
     branches: [ main ]
 
 jobs:
+  test_js:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test CSV report and download
+        run: node --test test/javascript/*_test.mjs
+
   scan_ruby:
     runs-on: ubuntu-latest
 
